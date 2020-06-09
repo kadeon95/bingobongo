@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+
+
+
+
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+in vec4 aPosition;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+in vec2 aTexCoord;
+out vec2 vTexCoord;
+
+void main()
+{
+
+    vTexCoord = aTexCoord;
+
+    gl_Position = projectionMatrix * modelViewMatrix * aPosition;
+}
+</script>
+
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+
+precision mediump float;
+
+out vec4 fColor;
+uniform sampler2D uTextureMap;
+in vec2 vTexCoord;
+
+void main()
+{
+    fColor = texture(uTextureMap, vTexCoord);
+
+}
+</script>
+
+
+
+
+
+
+<script type="text/javascript" src="../Common/InitShaders.js"></script>
+<script type="text/javascript" src="../Common/MVnew.js"></script>
+
+
+<script type="text/javascript" src="Homework2.js"></script>
+
+<head>
+	<style>
+		.myButton {
+			background-color: white; 
+			border: 2px solid #f44336;
+			color: black;
+			padding: 12px 24px;
+			text-align: center;
+			text-decoration: none;
+			display: inline-block;
+			font-size: 27px;
+			margin: 4px 2px;
+			-webkit-transition-duration: 0.4s; /* Safari */
+			transition-duration: 0.4s;
+			cursor: pointer;
+		}
+		.myButton:hover {
+			background-color: #ffff00;
+			color: red;
+		}
+		.myButton:disabled {
+			opacity: 0.2;
+			cursor: not-allowed;
+		}
+		.myButton:selected {
+			background-color: #ffa500;
+			color: yellow;
+		}
+		
+		
+		.mySlider {
+			-webkit-appearance: none;
+			width: 70%;
+			height: 10px;
+			border-radius: 5px;
+			background: #d3d3d3;
+			outline: none;
+			opacity: 0.7;
+			-webkit-transition: .2s;
+			transition: opacity .2s;
+		}
+		.mySlider:hover {
+			opacity: 1;
+		}
+		.mySlider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: #f44336;
+			cursor: pointer;
+		}
+		.mySlider::-moz-range-thumb {
+			width: 20px;
+			height: 20px;
+			border-radius: 50%;
+			background: #f44336;
+			cursor: pointer;
+		}
+		
+		.mySlider:disabled {
+			opacity: 0.2;
+			cursor: not-allowed;
+		}
+		
+		th, td {
+			padding: 10px;
+		}
+		th {
+			text-align: center;
+		}
+
+	</style>
+</head>
+<body>
+	<div>
+		<button class="myButton" id = "rotationButton">Reset and Rotate</button>
+		<button class="myButton" id = "walkButton">Walk</button>
+		<button class="myButton" id = "animateButton">Animate</button>
+		<button class="myButton" id = "view3Button">Far View</button>
+		<button class="myButton" id = "view1Button">Left View</button>
+		<button class="myButton" id = "view2Button">Right View</button>
+		<button class="myButton" id = "view4Button">Back View</button>
+		<button class="myButton" id = "view5Button">Frontal View</button>
+	</div>
+	<div>
+		<font size="5">
+			<table cellpadding="0" cellspacing="0" border="0" style="width:50%">
+				<tr><b>
+				    <th>Rotation Speed</th>
+				    <th>Walking Speed</th> 
+				    <th>Scratching Speed</th> 
+				    <th>Radius</th> 
+				    <th>Theta </th> 
+				    <th>Phi </th> 
+				    <th>Fovy </th> 
+				    <th>Aspect  </th> 
+			 	</tr></b>
+			 	<tr>
+			 		<th>
+			 			0<input class="mySlider" id="RotationSpeedSlider" type="range"
+						min="0" max="5" step="0.5" value="1.0" /> 5
+					</th>
+					<th>
+			 			0<input class="mySlider"id="WalkingSpeedSlider" type="range"
+						min="0" max="2" step="0.1" value="0.4" /> 2
+					</th>
+					<th>
+			 			0<input class="mySlider"id="ScratchingSpeedSlider" type="range"
+						min="0" max="2" step="0.1" value="0.4" /> 2
+					</th>
+					<th>
+						 0.05<input id="radiusSlider" type="range"
+						 min="0.05" max="300" step="10" value="80.0" />
+						 10
+					</th>
+					<th>
+						-90<input id="thetaSlider" type="range"
+						 min="-180" max="180" step="5" value="80" />
+						 90
+					</th>
+					<th>
+						-90<input id="phiSlider" type="range"
+						 min="-180" max="180" step="5" value="-90" />
+						 90
+					</th>
+					<th>
+						10<input id="fovSlider" type="range"
+						 min="10" max="120" step="5" value="20" />
+						 120
+					</th>
+					<th>
+						0.5<input id="aspectSlider" type="range"
+						 min="0.5" max="2" step="0.1" value="1" />
+						 2
+					</th>
+			 	</tr>
+			</table>
+		</font>
+	</div>
+<body>
+	
+
+
+
+<canvas id="gl-canvas" width="2048"" height="2048">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+
+
+<img id = "texImageTreeTorso" src = "specchi_texture_torso.png" hidden></img>
+<img id = "texImageTreeFoliage" src = "specchi_texture_foliage.jpeg" hidden></img>
+<img id = "texImageBearFace" src = "specchi_texture_bear_face_peluche.jpeg" hidden></img>
+<img id = "texImageBearBody" src = "specchi_texture_bear_body.jpeg" hidden></img>
+<img id = "texImagePrato" src = "specchi_texture_grass.jpg" hidden></img>
+<img id = "texImageBackground" src = "specchi_texture_background3.jpg" hidden></img>
+<img id = "texImageBearHead" src = "specchi_texture_bear_head.jpg" hidden></img>
+
+</body>
+</html>
