@@ -126,7 +126,7 @@ var texCoordsArray = [];
 //##################################
 //##################################   Tree part.
 // Parameters for the lookAt function.
-var radius_eye = 80.0;
+var radius_eye = 95.0;
 var theta_eye = 1.39; //  So that at the beginning the scene is clearly visible.
 var phi_eye =-90.0* Math.PI/180.0;
 var eye;
@@ -143,16 +143,16 @@ var  aspect=1.0;       // Viewport aspect ratio
 // Constants used in order to build the geometry of the tree.
 var scale_factor=20.0;
 
-var base_foliage = 0.6 * scale_factor;
-var cap = 0.90* scale_factor;
-var middle_foliage_height = 0.30* scale_factor;
-var upper_foliage_height = 0.60* scale_factor;
+var base_foliage = 1.0 * scale_factor;
+var cap = 1.50* scale_factor;
+var middle_foliage_height = 0.50* scale_factor;
+var upper_foliage_height = 1.0* scale_factor;
 
 var torso_tree = 0.1* scale_factor;
-var middle_foliage = 0.4* scale_factor;
+var middle_foliage = 0.7* scale_factor;
 var middle_foliage_cap_offset=0.10* scale_factor;
 var upper_foliage_cap_offset=0.10* scale_factor;
-var upper_foliage = 0.2* scale_factor;
+var upper_foliage = 0.4* scale_factor;
 var base_foliage_up = 0.2* scale_factor;
 var middle_foliage_up = 0.1* scale_factor;
 
@@ -216,8 +216,8 @@ var vertices_tree = [
 	vec4(upper_foliage,  0,  foliage_offset+upper_foliage_height+z_offset* scale_factor,1.0),
 	vec4(0.0, upper_foliage,  foliage_offset+upper_foliage_height+z_offset* scale_factor,1.0), //upper chioma 19
 	vec4(0.0, 0.0,  foliage_offset+cap+z_offset* scale_factor,1.0), // higher_puntale 20
-	vec4(0.0, 0.0,  foliage_offset+middle_foliage_height+0.8+z_offset* scale_factor,1.0), //lower_puntale 21
-	vec4(0.0, 0.0,  foliage_offset+upper_foliage_height+0.8+z_offset* scale_factor,1.0) //middle_puntale	22
+	vec4(0.0, 0.0,  foliage_offset+middle_foliage_height+3+z_offset* scale_factor,1.0), //lower_puntale 21
+	vec4(0.0, 0.0,  foliage_offset+upper_foliage_height+2+z_offset* scale_factor,1.0) //middle_puntale	22
 ];
 
 
@@ -1060,7 +1060,7 @@ window.onload = function init() {
 		up=vec3(920, 30, 0);
 	};
 	document.getElementById("view3Button").onclick = function() { 
-		radius_eye = 80.0;
+		radius_eye = 95.0;
 		theta_eye = 1.39; 
 		phi_eye = -90.0* Math.PI/180.0;
 		at=vec3(20,50,10);
