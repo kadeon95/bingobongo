@@ -1,6 +1,5 @@
 "use strict";
 
-var walk=false;
 
 var canvas;
 var gl;
@@ -16,6 +15,8 @@ var numPositions = 108;
 
 
 // ######################################################################## ANIMATION VARIABLES
+var walk=true;
+
 var animate=false;
 var walking_speed=0.4;
 var scratching_speed=0.4;
@@ -71,11 +72,16 @@ var rightLowerLegId = 9;
 var tailId=11;
 var tail1Id=12;
 var tail2Id=13;
-			//0   1     2    3    4  5     6   7    8  9  10  11   12    13
-var theta = [90,  0, -110, -20, -70, 0,  -110, 0, -70, 0,  0,  0,  45,-22.5];
+
+
+var earLeftId = 14
+var earRightId = 15;
+			//0   1     2    3    4  5     6   7    8  9  10  11   12    13 14 15
+var theta = [90,  0, -110, -20, -70, 0,  -110,  -20,  -70,   0,  0,  0,  45,-22.5, 0, 0];
 
 
 // Sizes of the bear's components
+
 var torsoHeight = 8.0;
 var torsoWidth = 5.0;
 
@@ -98,8 +104,11 @@ var headWidth = 3.0;
 var tailHeight = 1.5;
 var tailWidth = 1.0;
 
+var earHeight = 1.5;
+var earWidth = 1.5;
+
 // Number of node and number of angles of the structure.
-var numNodes = 10;
+var numNodes = 13;
 var numAngles = 11;
 
 // Number of vertices pushed for one cube.
@@ -119,7 +128,6 @@ var vBuffer;
 var modelViewLoc;
 
 var pointsArray = [];
-var normalsArray = [];
 var texCoordsArray = [];
 
 
@@ -135,7 +143,7 @@ var up = vec3(0, -100, 670);
 
 //Parameters for the perspective view
 var  near = 0.01;
-var  far = 600.0;
+var  far = 400.0;
 var  fovy = 45.0;  // Field-of-view in Y direction angle (in degrees)
 var  aspect=1.0;       // Viewport aspect ratio
 
@@ -190,7 +198,7 @@ var lower_cap =  21;
 var middle_cap = 22;
 
 // Flag used in order to remove and apply again the texture.
-var texture_tree_torso, texture_tree_foliage, texture_bear_body, texture_bear_face, texture_bear_head, texture_prato, texture_background;
+var texture_tree_torso, texture_tree_foliage, texture_bear_body, texture_bear_face, texture_bear_head, texture_prato; //, texture_background;
 var foliage_offset = 5;
 
 //                                                                                      ARRAY OF vertices_tree
@@ -263,83 +271,60 @@ var texCoordBear_Body = [
 
 
 // Function used for building each single quadrilateral of the scene.
-function quad_tree(a, b, c, d, what_texture ) {
-	
-    var t1 = subtract(vertices_tree[b], vertices_tree[a]);
-    var t2 = subtract(vertices_tree[c], vertices_tree[a]);
-    var normal = cross(t1, t2);
-    normal = vec3(normal);
-
-	
+function quad(a, b, c, d, what_texture ) {
 	if ( what_texture == "tree_torso" ){
 		
 	
 		pointsArray.push(vertices_tree[a]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoord[0]);
 
 		pointsArray.push(vertices_tree[b]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoord[1]);
 
 		pointsArray.push(vertices_tree[d]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoord[3]);
 
 		pointsArray.push(vertices_tree[b]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoord[1]);
 
 		pointsArray.push(vertices_tree[c]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoord[2]);
 
 		pointsArray.push(vertices_tree[d]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoord[3]);
 	}
 	else if(what_texture=="tree_foliage")
 	{
 		pointsArray.push(vertices_tree[a]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordFoliage[0]);
 
 		pointsArray.push(vertices_tree[b]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordFoliage[1]);
 
 		pointsArray.push(vertices_tree[d]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordFoliage[3]);
 
 		pointsArray.push(vertices_tree[b]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordFoliage[1]);
 
 		pointsArray.push(vertices_tree[c]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordFoliage[2]);
 
 		pointsArray.push(vertices_tree[d]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordFoliage[3]);
 	}
   	else if(what_texture=="bear_body")
 	{
 		pointsArray.push(vertices[a]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordBear_Body[0]);
 
 		pointsArray.push(vertices[b]);
-        normalsArray.push(normal);
 		texCoordsArray.push(texCoordBear_Body[1]);
 		
 		pointsArray.push(vertices[c]);
-        normalsArray.push(normal);
 		texCoordsArray.push(texCoordBear_Body[2]);
 		
 		pointsArray.push(vertices[d]);
-		normalsArray.push(normal);
 		texCoordsArray.push(texCoordBear_Body[3]);
 		
     }
@@ -349,79 +334,44 @@ function quad_tree(a, b, c, d, what_texture ) {
 
 // Function used for building a single foliage ( they are 3 in total )
 function cap_foliage(a, b, c, d, e) {
-     
-     var t1 = subtract(vertices_tree[b], vertices_tree[a]);
-     var t2 = subtract(vertices_tree[e], vertices_tree[a]);
-     var normal_face_1 = cross(t1, t2);
-     normal_face_1 = vec3(normal_face_1);
-     
-     var t1 = subtract(vertices_tree[a], vertices_tree[d]);
-     var t2 = subtract(vertices_tree[e], vertices_tree[d]);
-     var normal_face_2 = cross(t1, t2);
-     normal_face_2 = vec3(normal_face_2);
-     
-     var t1 = subtract(vertices_tree[d], vertices_tree[c]);
-     var t2 = subtract(vertices_tree[e], vertices_tree[c]);
-     var normal_face_3 = cross(t1, t2);
-     normal_face_3 = vec3(normal_face_3);
-     
-     var t1 = subtract(vertices_tree[c], vertices_tree[b]);
-     var t2 = subtract(vertices_tree[e], vertices_tree[b]);
-     var normal_face_4 = cross(t1, t2);
-     normal_face_4 = vec3(normal_face_4);
-
-
-
      pointsArray.push(vertices_tree[a]);
-     normalsArray.push(normal_face_1);
      texCoordsArray.push(texCoordTriangle[0]);
 
      pointsArray.push(vertices_tree[b]);
-     normalsArray.push(normal_face_1);
      texCoordsArray.push(texCoordTriangle[1]);
 
      pointsArray.push(vertices_tree[e]);
-     normalsArray.push(normal_face_1);
      texCoordsArray.push(texCoordTriangle[2]);
 
      pointsArray.push(vertices_tree[a]);
-     normalsArray.push(normal_face_2);
      texCoordsArray.push(texCoordTriangle[0]);
 
      pointsArray.push(vertices_tree[d]);
-     normalsArray.push(normal_face_2);
      texCoordsArray.push(texCoordTriangle[1]);
 
      pointsArray.push(vertices_tree[e]);
-     normalsArray.push(normal_face_2);     
      texCoordsArray.push(texCoordTriangle[2]);
 
      pointsArray.push(vertices_tree[d]);
-     normalsArray.push(normal_face_3);
      texCoordsArray.push(texCoordTriangle[0]);
 
      pointsArray.push(vertices_tree[c]);
-     normalsArray.push(normal_face_3);
      texCoordsArray.push(texCoordTriangle[1]);
 
      pointsArray.push(vertices_tree[e]);
-     normalsArray.push(normal_face_3);     
      texCoordsArray.push(texCoordTriangle[2]);
 
      pointsArray.push(vertices_tree[c]);
-     normalsArray.push(normal_face_4);
      texCoordsArray.push(texCoordTriangle[0]);
 
      pointsArray.push(vertices_tree[b]);
-     normalsArray.push(normal_face_4);
      texCoordsArray.push(texCoordTriangle[1]);
 
      pointsArray.push(vertices_tree[e]);
-     normalsArray.push(normal_face_4);
      texCoordsArray.push(texCoordTriangle[2]);
 
   // 12 fin qua, poi chiamo quad ---> +6 = 18 vertici ok
-     quad_tree(a,b,c,d, "tree_foliage"); // base 
+     quad(a,b,c,d, "tree_foliage"); // base 
 }
 
 
@@ -436,11 +386,11 @@ function build_foliage()  // 18*3 = 54  vertices_tree
 
 function build_torso_(b_a, b_b ,b_c ,b_d ,u_a ,u_b ,u_c ,u_d)  //30 vertici pushati per il torso
 {
-    quad_tree(b_a, b_b, u_b, u_a, "tree_torso");
-    quad_tree(b_b, b_c, u_c, u_b,"tree_torso");
-    quad_tree(b_c, b_d, u_d, u_c,"tree_torso");
-    quad_tree(b_d, b_a, u_a, u_d,"tree_torso");
-    quad_tree(b_a, b_b, b_c, b_d,"tree_torso");
+    quad(b_a, b_b, u_b, u_a, "tree_torso");
+    quad(b_b, b_c, u_c, u_b,"tree_torso");
+    quad(b_c, b_d, u_d, u_c,"tree_torso");
+    quad(b_d, b_a, u_a, u_d,"tree_torso");
+    quad(b_a, b_b, b_c, b_d,"tree_torso");
 
 }
 
@@ -529,7 +479,7 @@ function configureTexturePrato( image ) {
     gl.uniform1i(gl.getUniformLocation(program, "uTexMap"), 0);
 }
 
-function configureTextureBackground( image ) {
+/*function configureTextureBackground( image ) {
     texture_background= gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture_background);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB,
@@ -538,7 +488,7 @@ function configureTextureBackground( image ) {
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT );
     gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT );
     gl.uniform1i(gl.getUniformLocation(program, "uTexMap"), 0);
-}
+}*/
 
 
 
@@ -603,7 +553,7 @@ function initNodes(Id) {
 	m = mult(m, rotate(theta[head1Id], vec3(1, 0, 0)))
 	m = mult(m, rotate(theta[head2Id], vec3(0, 1, 0)));
     m = mult(m, translate(0.0, -0.5*headHeight, 0.0));
-    figure[headId] = createNode( m, head, leftUpperArmId, null);
+    figure[headId] = createNode( m, head, leftUpperArmId, earLeftId);
     break;
 
 
@@ -675,6 +625,26 @@ function initNodes(Id) {
     break;
     
     
+    
+    case earLeftId:
+
+
+    m = translate(headWidth/2.0, 2, 0);
+	m = mult(m, rotate(theta[earLeftId], vec3(1, 0, 0)))
+	m = mult(m, rotate(theta[earLeftId], vec3(0, 1, 0)));
+    figure[earLeftId] = createNode( m, earLeft, earRightId, null);
+    break;
+    
+    case earRightId:
+
+
+    m = translate(-headWidth/2.0, 2, 0);
+	m = mult(m, rotate(theta[earRightId], vec3(1, 0, 0)))
+	m = mult(m, rotate(theta[earRightId], vec3(0, 1, 0)));
+    figure[earRightId] = createNode( m, earRight, null, null);
+    break;
+    
+    
     }
 
 }
@@ -682,7 +652,6 @@ function initNodes(Id) {
 function traverse(Id) {
    // Passo base: ho raggiunto la foglia
    if(Id == null) return;
-   
    stack.push(modelViewMatrix);
    modelViewMatrix = mult(modelViewMatrix, figure[Id].transform);
    figure[Id].render();
@@ -716,7 +685,7 @@ function torso() {
 function head() {
 
     instanceMatrix = mult(modelViewMatrix, translate(0.0, 0.5 * headHeight, 0.0 ));
-	instanceMatrix = mult(instanceMatrix, scale(headWidth, headHeight, headWidth) );
+	instanceMatrix = mult(instanceMatrix, scale(headWidth, headHeight, headWidth*0.8) );
     gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix) );
     
 
@@ -818,22 +787,35 @@ function tail() {
     for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
 }
 
-function quad(a, b, c, d) {
-     pointsArray.push(vertices[a]);
-     pointsArray.push(vertices[b]);
-     pointsArray.push(vertices[c]);
-     pointsArray.push(vertices[d]);
+// Function for pushing the vertices of the ears and set the current MV matrix.
+function earLeft() {
+ 
+    instanceMatrix = mult(modelViewMatrix, translate(-0.3, 0.3 * earHeight, 0.0 ));
+	instanceMatrix = mult(instanceMatrix, scale(0.5*(earWidth*1.5), 0.5*(earHeight*1.5), 0.5*(earWidth)) );
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix) );
+            gl.bindTexture(gl.TEXTURE_2D, texture_bear_head);
+
+    for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
 }
 
+// Function for pushing the vertices of the ears and set the current MV matrix.
+function earRight() {
+ 
+    instanceMatrix = mult(modelViewMatrix, translate(0.3 , 0.3*earHeight, 0 ));
+	instanceMatrix = mult(instanceMatrix, scale(0.5*(earWidth*1.5), 0.5*(earHeight*1.5), 0.5*(earWidth)) );
+    gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix) );
+            gl.bindTexture(gl.TEXTURE_2D, texture_bear_head);
 
+    for(var i =0; i<6; i++) gl.drawArrays(gl.TRIANGLE_FAN, 4*i, 4);
+}
 function cube()
 {
-    quad_tree( 1, 0, 3, 2 , "bear_body" );
-    quad_tree( 2, 3, 7, 6 , "bear_body");
-    quad_tree( 3, 0, 4, 7 , "bear_body");
-    quad_tree( 6, 5, 1, 2 , "bear_body");
-    quad_tree( 4, 5, 6, 7 , "bear_body");
-    quad_tree( 5, 4, 0, 1 , "bear_body");
+    quad( 1, 0, 3, 2 , "bear_body" );
+    quad( 2, 3, 7, 6 , "bear_body");
+    quad( 3, 0, 4, 7 , "bear_body");
+    quad( 6, 5, 1, 2 , "bear_body");
+    quad( 4, 5, 6, 7 , "bear_body");
+    quad( 5, 4, 0, 1 , "bear_body");
 }
 
 // I use a different modelViewMatrix for the Tree
@@ -843,12 +825,10 @@ var projectionMatrix2;
 window.onload = function init() {
 
     canvas = document.getElementById( "gl-canvas" );
-
     gl = canvas.getContext('webgl2');
     if (!gl) { alert( "WebGL 2.0 isn't available" ); }
 
     gl.viewport( 0, 0, canvas.width, canvas.height );
-    
     // Background color of the sky
     gl.clearColor( 0.70, 0.91, 1.0, 1.0 );
     gl.enable(gl.DEPTH_TEST);
@@ -859,14 +839,10 @@ window.onload = function init() {
     program = initShaders( gl, "vertex-shader", "fragment-shader");
 
     gl.useProgram( program);
-
     instanceMatrix = mat4();
-
     modelViewMatrix = mat4();
 
-
     gl.uniformMatrix4fv(gl.getUniformLocation( program, "modelViewMatrix"), false, flatten(modelViewMatrix)  );
-
     modelViewMatrixLoc = gl.getUniformLocation(program, "modelViewMatrix");
 
     cube(); 												// 24 vertici pushati
@@ -879,23 +855,12 @@ window.onload = function init() {
 		vec4(   0,      -5,   3000,     1.0),  //torso ba
 		vec4(+3000,   -5,   -1000,  1.0)  //torso ba
 	];
-
-	var t3 = subtract(vertices_2[0], vertices_2[1]);
-	var t4 = subtract(vertices_2[0], vertices_2[2]);
-	var normal2 = cross(t3, t4);
-
 	pointsArray.push(vertices_2[0]);
 	pointsArray.push(vertices_2[1]);
 	pointsArray.push(vertices_2[2]);
-	normalsArray.push(normal2);
-	normalsArray.push(normal2);
-	normalsArray.push(normal2);
 	texCoordsArray.push(texCoordPrato[0]);
-
 	texCoordsArray.push(texCoordPrato[1]);
-
 	texCoordsArray.push(texCoordPrato[2]);
-	
         // This code was used for enabling also different backgrounds but it is no longer used
         // However could be useful for future improvements
 		/*var vertices_3= [
@@ -905,20 +870,11 @@ window.onload = function init() {
 			vec4(-200,   300,   -100,  1.0)  //torso ba
 		];
 
-		 t3 = subtract(vertices_3[0], vertices_3[1]);
-		 t4 = subtract(vertices_3[0], vertices_3[2]);
-		 normal2 = cross(t3, t4);
-
 		pointsArray.push(vertices_3[0]);
 		pointsArray.push(vertices_3[1]);
 		pointsArray.push(vertices_3[2]);
-		normalsArray.push(normal2);
-		normalsArray.push(normal2);
-		normalsArray.push(normal2);
 		texCoordsArray.push(texCoordPrato[0]);
-
 		texCoordsArray.push(texCoordPrato[1]);
-
 		texCoordsArray.push(texCoordPrato[2]);
 		
 		var vertices_4= [
@@ -928,20 +884,11 @@ window.onload = function init() {
 			vec4(600,   -25,   -200,  1.0)  //torso ba
 		];
 
-		 t3 = subtract(vertices_4[0], vertices_4[1]);
-		 t4 = subtract(vertices_4[0], vertices_4[2]);
-		 normal2 = cross(t3, t4);
-
 		pointsArray.push(vertices_4[0]);
 		pointsArray.push(vertices_4[1]);
 		pointsArray.push(vertices_4[2]);
-		normalsArray.push(normal2);
-		normalsArray.push(normal2);
-		normalsArray.push(normal2);
 		texCoordsArray.push(vec2(0.5,1));
-
 		texCoordsArray.push(vec2(0,0));
-
 		texCoordsArray.push(vec2(0,1));
 		*/
 		// POSITIONS ARRAY
@@ -968,40 +915,24 @@ window.onload = function init() {
     configureTextureTreeFoliage(image);
     
     image = document.getElementById("texImageTreeTorso");
-
     configureTextureTreeTorso(image);
     
     image = document.getElementById("texImageBearFace");
-
     configureTextureBearFace(image);
 
     image = document.getElementById("texImageBearBody");
-
     configureTextureBearBody(image);
     
     image = document.getElementById("texImagePrato");
-
     configureTexturePrato(image); 
     
-    image = document.getElementById("texImageBackground");
-
-    configureTextureBackground(image);
+/*    image = document.getElementById("texImageBackground");
+    configureTextureBackground(image);*/
     
     image = document.getElementById("texImageBearHead");
-
     configureTextureBearHead(image);
-    
+
     //   Sliders and Buttons
-    
-    document.getElementById("radiusSlider").onchange = function(event) {
-       radius_eye= parseFloat(event.target.value);
-    };
-    document.getElementById("thetaSlider").onchange = function(event) {
-        theta_eye = parseFloat(event.target.value)* Math.PI/180.0;
-    };
-    document.getElementById("phiSlider").onchange = function(event) {
-        phi_eye = parseFloat(event.target.value)* Math.PI/180.0;
-    };
     document.getElementById("aspectSlider").onchange = function(event) {
         aspect = parseFloat(event.target.value);
     };
@@ -1011,38 +942,78 @@ window.onload = function init() {
     
     document.getElementById("rotationButton").onclick = function() { 
 		scene_rotation = !scene_rotation; 
+		if(scene_rotation){
+			document.getElementById("walkButton").disabled = true;
+			document.getElementById("animateButton").disabled = true;
+			document.getElementById("RotationSpeedSlider").disabled = false;
+		}else{
+			document.getElementById("walkButton").disabled = true;
+			document.getElementById("animateButton").disabled = true;
+			document.getElementById("RotationSpeedSlider").disabled =  true;
+		}
+		document.getElementById("WalkingSpeedSlider").disabled = true;
+		document.getElementById("ScratchingSpeedSlider").disabled = true;
+	};
+	
+    document.getElementById("resetButton").onclick = function() { 
+		scene_rotation = false; 
+		walk=false;
+		animate=false;
+		switch_direction=false;
+		stand_up=false;
+		backside = false;
+		bear_scratch_down = true;
+		bear_scratch_up = false;
+		backOnTrunk = false;
+		on_knees = false;
 		torso_translation=30.0;
-		 animate=false;
-		 walking_speed=0.4;
-		 scratching_speed=0.4;
-		 motion_walk=3.0;
-		 motion_lowerArm_walk=1.5;
-		 torso_speed = 1.0;
-		 switch_direction=false;
-		 scene_rotation_speed = 1.0;
-		 scene_rotation_angle = 0.0;
-		 tree_position = -5.0;
-		 torso_angle_up = -90;
-		 stand_up=false;
-		 rotation_to_backside=0;
-		 backside = false;
-		 vertical_translation_bear = -0.2;
-		 bear_scratch_down = true;
-		 bear_scratch_up = false;
-		 torso_angle_horizzontal = 0;
-		 backOnTrunk = false;
-		 translation_to_trunk = 0;
-		 on_knees = false;
-		 theta = [90,  0, -110, -20, -70, 0,  -110, 0, -70, 0, 0, 0, 45,-22.5];
-			document.getElementById("walkButton").disabled = false;
-			document.getElementById("animateButton").disabled = false;
-			document.getElementById("WalkingSpeedSlider").disabled = true;
-			document.getElementById("ScratchingSpeedSlider").disabled = true;
-		if(scene_rotation) 	document.getElementById("RotationSpeedSlider").disabled = false;
-		else document.getElementById("RotationSpeedSlider").disabled =  true;
-
-			
-		 
+		walking_speed=0.4;
+		scratching_speed=0.4;
+		motion_walk=3.0;
+		motion_lowerArm_walk=1.5;
+		torso_speed = 1.0;
+		scene_rotation_speed = 1.0;
+		scene_rotation_angle = 0.0;
+		tree_position = -5.0;
+		torso_angle_up = -90;
+		rotation_to_backside=0;
+		vertical_translation_bear = -0.2;
+		torso_angle_horizzontal = 0;
+		translation_to_trunk = 0;
+				//0   1     2    3    4  5     6   7    8  9  10  11   12    13 14 15
+		theta = [90,  0, -110, -20, -70, 0,  -110, 0, -70, 0,  0,  0,  45,-22.5, 0, 0];
+		document.getElementById("RotationSpeedSlider").disabled = true;
+		document.getElementById("WalkingSpeedSlider").disabled = true;
+		document.getElementById("ScratchingSpeedSlider").disabled = true;
+		document.getElementById("rotationButton").disabled = false;
+		document.getElementById("walkButton").disabled = false;
+		document.getElementById("animateButton").disabled = false;
+		document.getElementById("WalkingSpeedSlider").value = walking_speed;
+		document.getElementById("RotationSpeedSlider").value = scene_rotation_speed/2;
+		document.getElementById("ScratchingSpeedSlider").value = scratching_speed/2;
+		
+		
+		// reconfigure initial settings of the bear
+		initNodes(head1Id);
+		//initNodes(tailId);
+		initNodes(torsoId);
+		
+		initNodes(leftUpperArmId);
+		initNodes(rightUpperArmId);
+		
+		initNodes(leftLowerArmId);
+		initNodes(rightLowerArmId);
+		
+		initNodes(leftUpperLegId);
+		initNodes(rightUpperLegId);
+		
+		initNodes(rightLowerLegId);
+		initNodes(leftLowerLegId);
+		
+		initNodes(tailId);
+		initNodes(earLeftId);
+		initNodes(earRightId);
+		
 	};
 	document.getElementById("view1Button").onclick = function() { 
 		radius_eye = 30.05; 
@@ -1051,7 +1022,6 @@ window.onload = function init() {
 		at=vec3(50,0,0);
 		up=vec3(30, -10, 1000);
 	};
-	
 	document.getElementById("view2Button").onclick = function() { 
 		radius_eye = 30.05; 
 		theta_eye = 1.48;
@@ -1066,7 +1036,6 @@ window.onload = function init() {
 		at=vec3(20,50,10);
 		up=vec3(0, -100, 670);
 	};
-	
 	document.getElementById("view4Button").onclick = function() { 
 		radius_eye = 30.0;
 		theta_eye = -1.570796326794896; 
@@ -1074,7 +1043,6 @@ window.onload = function init() {
 		at=vec3(-10, -80, 0);
 		up=vec3(30,290,520);
 	};
-
 	document.getElementById("view5Button").onclick = function() { 
 		radius_eye = 30.0;
 		theta_eye = 1.39; 
@@ -1083,7 +1051,6 @@ window.onload = function init() {
 		up=vec3(30,290,520);
 		document.getElementById("view5Button").selected = true;
 	};
-
     document.getElementById("walkButton").onclick = function() { 
 		walk = !walk;
 		if(walk){
@@ -1092,21 +1059,26 @@ window.onload = function init() {
 			scene_rotation=false;
 			document.getElementById("rotationButton").disabled = true;
 			document.getElementById("walkButton").disabled = false;
-			document.getElementById("animateButton").disabled = true;
+			document.getElementById("animateButton").disabled = false;
 			document.getElementById("RotationSpeedSlider").disabled = true;
 			document.getElementById("WalkingSpeedSlider").disabled = false;
 			document.getElementById("ScratchingSpeedSlider").disabled = true;
 			
 		}else{
-			document.getElementById("rotationButton").disabled = false;
+			document.getElementById("rotationButton").disabled = true;
 			document.getElementById("walkButton").disabled = false;
 			document.getElementById("animateButton").disabled = false;
 		}
 	};
+	
+	//When the page is refreshed set again the initial values.
+	document.getElementById("WalkingSpeedSlider").value = walking_speed;
+	document.getElementById("RotationSpeedSlider").value = scene_rotation_speed/2;
+	document.getElementById("ScratchingSpeedSlider").value = scratching_speed/2;
+	//Sliders values inputs.
     document.getElementById("WalkingSpeedSlider").onchange = function(event) { walking_speed = event.target.value; };
     document.getElementById("RotationSpeedSlider").onchange = function(event) { scene_rotation_speed = event.target.value/2; };
     document.getElementById("ScratchingSpeedSlider").onchange = function(event) { scratching_speed = event.target.value/2; };
-    
     document.getElementById("animateButton").onclick = function() { 
 		animate = !animate;
 		if(animate){
@@ -1122,26 +1094,31 @@ window.onload = function init() {
 			
 		}else{
 			walk=false;
-			document.getElementById("rotationButton").disabled = false;
+			document.getElementById("rotationButton").disabled = true;
 			document.getElementById("walkButton").disabled = true;
 			document.getElementById("animateButton").disabled = false;
 		} 
 	};
-
+	    
+    //When the page is refreshed set again the initial values. 
+    document.getElementById("aspectSlider").value = aspect;
+    document.getElementById("fovSlider").value = fovy;
 	document.getElementById("walkButton").disabled = false;
 	document.getElementById("animateButton").disabled = false;
-	document.getElementById("WalkingSpeedSlider").disabled = true;
+	document.getElementById("rotationButton").disabled = true;
+	document.getElementById("resetButton").disabled = false;
+	document.getElementById("WalkingSpeedSlider").disabled = false;
 	document.getElementById("ScratchingSpeedSlider").disabled = true;
 	document.getElementById("RotationSpeedSlider").disabled =  true;
 
     for(i=0; i<numNodes; i++) initNodes(i);
-
+    
     render();
 }
 
 var render = function() {
 
-
+		console.log(scene_rotation_angle, torso_angle_horizzontal, torso_angle_up, rotation_to_backside);
         // Parameters for the lookAt function
         
 		eye = vec3(radius_eye*Math.sin(theta_eye)*Math.cos(phi_eye),
@@ -1168,11 +1145,8 @@ var render = function() {
 		instanceMatrix = mult(instanceMatrix, rotate(90, vec3(0, 1, 0)) );
 		instanceMatrix = mult(instanceMatrix, rotate(90, vec3(1, 0, 0)) );
 		instanceMatrix = mult(instanceMatrix, rotate(scene_rotation_angle, vec3(0, 0, 1)) );
-		
-        if(scene_rotation){
-			scene_rotation_angle += scene_rotation_speed;
-		}
-			
+
+		// Use the MV matrix for the tree and the meadow
         gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(instanceMatrix) );
 		
 		
@@ -1185,26 +1159,45 @@ var render = function() {
 		gl.drawArrays(gl.TRIANGLES, 24 + 54 ,30);
 		
 		
-        gl.bindTexture(gl.TEXTURE_2D, texture_bear_body);
-
-		
-		initNodes(tailId);
-
-        traverse(torsoId);
+        //gl.bindTexture(gl.TEXTURE_2D, texture_bear_body);
         
-
-        
-
-
-        
-
+        if(animate || walk){
+			// Initialize the nodes so that they are sent again to the graphic card
+			initNodes(head1Id);
+			initNodes(torsoId);
 			
-        
-        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
-        
+			initNodes(leftUpperArmId);
+			initNodes(rightUpperArmId);
+			
+			initNodes(leftLowerArmId);
+			initNodes(rightLowerArmId);
+			
+			initNodes(leftUpperLegId);
+			initNodes(rightUpperLegId);
+			
+			initNodes(rightLowerLegId);
+			initNodes(leftLowerLegId);
+			
+			initNodes(tailId);
+			initNodes(earLeftId);
+			initNodes(earRightId);
+		}
+		if(scene_rotation){
+			initNodes(torsoId);
+		}
+        traverse(torsoId);  
+
+
+		// In order to avoid overflow
+        if(scene_rotation){
+			scene_rotation_angle += scene_rotation_speed;
+			scene_rotation_angle = scene_rotation_angle % 360;
+		}
+		
+		
         if(walk){
 			//Walking mode
-			torso_translation -= walking_speed * torso_speed;
+			torso_translation -= walking_speed*0.3 * torso_speed;
 
 			theta[leftUpperArmId] += walking_speed * motion_walk;
 			theta[rightUpperArmId]-= walking_speed * motion_walk;
@@ -1337,7 +1330,7 @@ var render = function() {
 				
 				// It is well positioned now. Then scratch its back
 				if( document.getElementById("ScratchingSpeedSlider").disabled == true ){
-					console.log("DISABLED!");
+					//console.log("DISABLED!");
 					document.getElementById("ScratchingSpeedSlider").disabled = false;
 				}
 
@@ -1389,25 +1382,8 @@ var render = function() {
 
 		}
 		
-		// Initialize the nodes so that they are sent again to the graphic card
-		initNodes(head1Id);
-		initNodes(tailId);
-		initNodes(torsoId);
-		
-		initNodes(leftUpperArmId);
-		initNodes(rightUpperArmId);
-		
-		initNodes(leftLowerArmId);
-		initNodes(rightLowerArmId);
-		
-		initNodes(leftUpperLegId);
-		initNodes(rightUpperLegId);
-		
-		initNodes(rightLowerLegId);
-		initNodes(leftLowerLegId);
-		
-		initNodes(tailId);
-		
+				// Set the MV matrix for the meadow 
+        gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix) );
 		gl.bindTexture(gl.TEXTURE_2D, texture_prato);
 
         gl.drawArrays(gl.TRIANGLES,numPositions,3);
